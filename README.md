@@ -51,9 +51,9 @@ GitHub Pages or open it locally; it needs no server.
 
 ```
 pip install -r requirements.txt
-python -m pytest tests        # central results quoted in the paper (seconds)
-python run_all.py --quick     # all result tables, 10x fewer Monte Carlo draws (minutes)
-python run_all.py             # full run as in the paper
+python -m pytest tests        
+python run_all.py --quick     
+python run_all.py             
 ```
 
 
