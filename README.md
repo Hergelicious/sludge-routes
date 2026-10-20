@@ -6,6 +6,7 @@ sources (`data/plant_screening.csv`): entries with no plant of that size behind 
 below the threshold, preliminary treatment only, or a duplicate) are removed, and the screened population is the one
 every result is computed on; `python run_all.py --population all` restores the unscreened 364 entries.
 
+Code and data for: Hagar H. Hassan and Hassan, A. H. *Where sewage sludge goes matters more than how it is treated* (submitted).
 
 ## What the model does
 
@@ -27,6 +28,8 @@ every result is computed on; `python run_all.py --population all` restores the u
 - **Grid decarbonisation**: current practice and the technical potential with every country's grid factor scaled
   towards zero (`run_all.py`).
 
+Every parameter has a central value, a range and a source in `sludgeroutes/params.py`; values without a published
+source are marked `ASSUMPTION`.
 
 ## Data
 
@@ -51,11 +54,12 @@ GitHub Pages or open it locally; it needs no server.
 
 ```
 pip install -r requirements.txt
-python -m pytest tests        
-python run_all.py --quick     
-python run_all.py             
+python -m pytest tests        # central results quoted in the paper (seconds)
+python run_all.py --quick     # all result tables, 10x fewer Monte Carlo draws (minutes)
+python run_all.py             # full run as in the paper
 ```
 
+Results are written to `results/` as CSV and JSON; `results/headline.json` holds the main numbers.
 
 | Output | In the paper |
 |---|---|
