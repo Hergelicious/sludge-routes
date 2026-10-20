@@ -1,0 +1,11 @@
+key,land,landfill,incin,other,source
+CHN,0.293,0.201,0.267,0.239,"Wei et al. 2020, Environ. Int. 144, 106093 (2019 data)"
+TUR,0.179,0.4,0.164,0.257,"Eurostat env_ww_spd, 2022 urban (agriculture 6.2 + compost 11.7)"
+BRA,0.151,0.5,0.0,0.349,"Machado 2001, UN-Habitat Global Atlas, Table 2"
+ZAF,0.3,0.67,0.0,0.03,"Herselman et al. 2005, WRC 1209/1/05, Table 2.5"
+CHN_alt,0.14,0.42,0.27,0.17,"Liu et al. 2023, Energy 264, 126294, Introduction (ref. 1): landfill 42, land 14, building materials 17, incineration 27%"
+EGY,1.0,0.0,0.0,0.0,Ghazy et al. 2009 (land after drying beds; rarely landfill)
+CHN_incin,0.0,0.0,1.0,0.0,"Sensitivity: every large Chinese plant incinerates or co-fires its sludge, as documented at the largest ones (Supplementary Table 7)"
+doc_land,1.0,0.0,0.0,0.0,"Documented at the plant: sludge goes to land (Supplementary Table 7)"
+doc_landfill,0.0,1.0,0.0,0.0,"Documented at the plant: sludge goes to landfill or a monofill (Supplementary Table 7)"
+doc_incin,0.0,0.0,1.0,0.0,"Documented at the plant: sludge is incinerated or co-fired (Supplementary Table 7)"

@@ -1,0 +1,357 @@
+<title>SludgeRoutes Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a fixed input column on the left (the plant as the operator knows it), results flowing on the right;
+   stacks to one column on phones. Palette follows the paper's figures: navy = pyrolysis, gold = diversion / current
+   practice, warm greys = baselines. */
+:root {
+  --bg: #f7f6f2; --panel: #ffffff; --fg: #1c1b18; --muted: #6a675f; --line: #dcd9d0;
+  --navy: #1f3a68; --navy-soft: #dfe6f1; --gold: #b8891c; --gold-soft: #f4ead2; --grey: #8f8878; --grey-soft: #e9e6de;
+  --good: #2f6b3a; --bad: #9b3b2c;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15171b; --panel: #1e2126; --fg: #ebe9e3; --muted: #a39f94; --line: #353941;
+  --navy: #8fa8d4; --navy-soft: #26324a; --gold: #d9ad45; --gold-soft: #3d3317; --grey: #a8a194; --grey-soft: #2b2d31;
+  --good: #7cc48a; --bad: #e07f6c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15171b; --panel: #1e2126; --fg: #ebe9e3; --muted: #a39f94; --line: #353941;
+  --navy: #8fa8d4; --navy-soft: #26324a; --gold: #d9ad45; --gold-soft: #3d3317; --grey: #a8a194; --grey-soft: #2b2d31;
+  --good: #7cc48a; --bad: #e07f6c; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.45; margin: 0;
+  padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.wrap { max-width: 1180px; margin: 0 auto }
+header h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; text-wrap: balance }
+header p { margin: 0; color: var(--muted); max-width: 70ch }
+header p a { color: inherit }
+.grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 24px; margin-top: 22px; align-items: start }
+@media (max-width: 800px) { .grid { grid-template-columns: 1fr } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; min-width: 0 }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; font-weight: 600 }
+h3 { font-size: 15px; margin: 0 0 6px; font-weight: 600 }
+.field { display: grid; grid-template-columns: 1fr 108px; gap: 8px; align-items: center; margin: 7px 0 }
+.field label { font-size: 13px }
+.field small { display: block; color: var(--muted); font-size: 11px }
+input[type=number], select { width: 100%; font: 13px var(--mono); padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--bg); color: var(--fg) }
+input[type=number]:focus, select:focus, input[type=range]:focus, button:focus-visible, input[type=checkbox]:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px }
+.seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 4px; overflow: hidden }
+.seg button { flex: 1; border: 0; background: var(--bg); color: var(--fg); padding: 5px 4px; font: 500 12px var(--sans); cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--navy); color: #fff }
+.unknown { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin: -3px 0 8px }
+.unknown input { margin: 0 }
+.range { display: grid; grid-template-columns: 1fr 64px; gap: 8px; align-items: center }
+input[type=range] { width: 100%; accent-color: var(--navy) }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.results { display: grid; gap: 18px }
+.verdict { border-left: 4px solid var(--navy); padding: 10px 14px; background: var(--navy-soft); border-radius: 4px }
+.verdict.gold { border-color: var(--gold); background: var(--gold-soft) }
+.verdict.grey { border-color: var(--grey); background: var(--grey-soft) }
+.warn { border-left: 4px solid #b5651d; background: #fbf1e6; padding: 8px 14px; margin: 0 0 12px; border-radius: 4px; font-size: 13px }
+.warn p { margin: 2px 0 }
+.run.alt { background: transparent; color: var(--navy); border: 1px solid var(--navy); margin-top: 6px }
+.verdict .big { font-size: 18px; font-weight: 600; margin: 0 0 2px }
+.verdict p { margin: 2px 0 }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px }
+.tile { padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px }
+.tile .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em }
+.tile .v { font: 500 17px var(--mono); font-variant-numeric: tabular-nums }
+.tile .s { font-size: 11px; color: var(--muted) }
+table { width: 100%; border-collapse: collapse; font-size: 13px }
+th, td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums }
+th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600 }
+th:first-child, td:first-child { text-align: left }
+tr.best td { font-weight: 600; background: var(--navy-soft) }
+.tablewrap { overflow-x: auto }
+.bars svg { width: 100%; height: auto; display: block }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0 }
+.pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em }
+.pill.navy { background: var(--navy); color: #fff } .pill.gold { background: var(--gold); color: #fff } .pill.grey { background: var(--grey); color: #fff }
+.robust { display: grid; grid-template-columns: 1fr; gap: 6px }
+.rbar { display: grid; grid-template-columns: 170px 1fr 56px; gap: 8px; align-items: center; font-size: 12px }
+.rbar .track { height: 10px; background: var(--grey-soft); border-radius: 5px; overflow: hidden }
+.rbar .fill { height: 100%; background: var(--navy) }
+.evpi { margin-top: 10px }
+.evpi .rbar .fill { background: var(--gold) }
+.warn { color: var(--bad); font-size: 12px }
+button.run { width: 100%; margin-top: 12px; padding: 9px; border: 0; border-radius: 4px; background: var(--navy); color: #fff; font: 600 13px var(--sans); cursor: pointer }
+details { font-size: 12px; color: var(--muted); margin-top: 8px } summary { cursor: pointer }
+footer { margin-top: 28px; color: var(--muted); font-size: 12px; max-width: 90ch }
+@media (prefers-reduced-motion: no-preference) { .rbar .fill { transition: width .3s ease } }
+</style>
+<!-- MODEL -->
+<!-- BODY -->
+<div class="wrap">
+<header>
+  <h1>SludgeRoutes Planner: which sludge intervention first, and what is it worth?</h1>
+  <p>Describe a large wastewater plant as its operator knows it. The page runs the sludgeroutes model (the one behind the paper <em>Where sewage sludge goes matters more than how it is treated</em>) in your browser and ranks four interventions against the plant's current practice: diverting sludge from landfill to farmland, capturing landfill gas, digestion and pyrolysis. Mark what you do not know, and it tells you how much the answer depends on it.</p>
+</header>
+<div class="grid">
+<section class="panel" aria-label="Plant inputs">
+  <h2>The plant</h2>
+  <div class="field"><label for="country">Country<small>sets grid carbon intensity and prices</small></label><select id="country"></select></div>
+  <div class="field"><label for="ef">Grid carbon intensity<small>t CO₂ per MWh</small></label><input id="ef" type="number" step="0.01" min="0" max="1.5"></div>
+  <div class="field"><label for="flow">Flow treated<small>m³ per day</small></label><input id="flow" type="number" step="10000" min="1000" value="500000"></div>
+  <div class="field"><label for="cod">Influent COD<small>mg per litre</small></label><input id="cod" type="number" step="10" min="100" max="1200" value="278"></div>
+  <div class="unknown"><input type="checkbox" id="u_cod"><label for="u_cod">not measured (278–600 mg/L)</label></div>
+  <div class="field"><label for="sec">Secondary treatment<small>activated sludge produces WAS</small></label><div class="seg" id="sec"><button type="button" data-v="1" aria-pressed="true">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>
+  <div class="field"><label for="dig">Digests its sludge today</label><div class="seg" id="dig"><button type="button" data-v="1" aria-pressed="true">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>
+  <div class="unknown"><input type="checkbox" id="u_dig"><label for="u_dig">unknown (equal odds)</label></div>
+  <div class="field"><label for="warm">Solar drying possible<small>within 35° of the equator</small></label><div class="seg" id="warm"><button type="button" data-v="1" aria-pressed="true">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>
+  <h2 style="margin-top:14px">Where the sludge goes today</h2>
+  <div class="field"><label for="s_land">To farmland<small>% of sludge</small></label><input id="s_land" type="number" step="5" min="0" max="100" value="40"></div>
+  <div class="field"><label for="s_lf">To landfill or dump<small>% of sludge</small></label><input id="s_lf" type="number" step="5" min="0" max="100" value="60"></div>
+  <div class="field"><label for="s_inc">To incineration<small>% of sludge</small></label><input id="s_inc" type="number" step="5" min="0" max="100" value="0"></div>
+  <div class="unknown"><input type="checkbox" id="u_disp"><label for="u_disp">unknown split between farmland and landfill</label></div>
+  <div class="field"><label for="cap">Landfill gas captured today<small>% of methane</small></label><input id="cap" type="number" step="5" min="0" max="80" value="0"></div>
+  <div class="field"><label for="lam">Farmland can take<small>% of the landfilled sludge</small></label><input id="lam" type="number" step="5" min="0" max="100" value="100"></div>
+  <div class="unknown"><input type="checkbox" id="u_lam"><label for="u_lam">unknown (0–100%)</label></div>
+  <h2 style="margin-top:14px">Money</h2>
+  <div class="field"><label for="fee">Landfill fee the plant pays<small>US$ per wet tonne; 0 at a free dump</small></label><input id="fee" type="number" step="1" min="0" max="100" value="10"></div>
+  <div class="field"><label for="elec">Electricity price<small>US$ per kWh</small></label><input id="elec" type="number" step="0.01" min="0" max="1"></div>
+  <div class="field"><label for="haul">Extra haul to farmland<small>km, one way</small></label><input id="haul" type="number" step="5" min="0" max="300" value="20"></div>
+  <div class="field"><label for="cv">Carbon value<small>US$ per t CO₂e avoided</small></label><div class="range"><input id="cv" type="range" min="0" max="400" step="10" value="100"><span class="mono" id="cv_lab">100</span></div></div>
+  <button class="run" type="button" id="run">Recompute</button>
+  <button class="run alt" type="button" id="bench" title="Loads the paper's worked case so the page can be checked against the published numbers">Load the paper's worked case (Gabal El-Asfar)</button>
+  <details><summary>What the inputs mean</summary>
+  Shares to farmland, landfill and incineration should add to 100; anything left over is split evenly. Costs are in US dollars of their source years without inflation adjustment. Digestion is ranked for emissions but not costed. All other parameters take the paper's central values and ranges (88 parameters, Supplementary Table 1).</details>
+</section>
+<section class="results" aria-live="polite">
+  <div id="warnbox"></div>
+  <div class="panel" id="verdictbox"></div>
+  <div class="panel"><h2>Interventions compared, alone and combined</h2><div class="tablewrap"><table id="tbl"></table></div>
+    <p class="note" id="tblnote"></p></div>
+  <div class="panel"><h2>When would the answer change?</h2><div id="thresh"></div></div>
+  <div class="panel"><h2>How sure is that?</h2><div id="robust"></div></div>
+  <div class="panel"><h2>Why: net emissions of each route at this plant</h2><div class="bars" id="bars"></div>
+    <p class="note">t CO₂e per tonne of raw dry solids, this grid. Negative is a net sink; biochar carbon counted at 80% permanence over 100 years.</p></div>
+</section>
+</div>
+<footer>SludgeRoutes Planner runs sludgeroutes v1.0.0, the model released with the paper (MIT licence), as a line-for-line JavaScript port checked against the Python on 2,503 test values. It is a screening tool with the paper's assumptions and ranges. It does not replace a site assessment, and it says nothing about what a regulator will permit. Inputs you mark as unknown are drawn across their range together with the model parameters (200 draws), which gives the share of draws in which each choice is best and the expected value of learning each fact before deciding.</footer>
+</div>
+<script>
+(function () {
+  const M = SludgeModel;
+  const $ = (id) => document.getElementById(id);
+  const num = (id) => parseFloat($(id).value) || 0;
+  const seg = (id) => $(id).querySelector('[aria-pressed="true"]').dataset.v === "1";
+  const STATE_LABEL = { "": "Nothing", V: "Divert from landfill", G: "Capture landfill gas", P: "Pyrolysis of all sludge", VG: "Divert what farmland takes, capture gas from the rest",
+    VP: "Divert, then pyrolysis", GP: "Capture, then pyrolysis", VGP: "Divert, capture and pyrolysis" };
+  const fmt = (x, d) => (x === undefined || isNaN(x)) ? "–" : x.toLocaleString("en-GB", { maximumFractionDigits: d, minimumFractionDigits: d });
+
+  // country select
+  const sel = $("country");
+  for (const c of COUNTRIES) { const o = document.createElement("option"); o.value = c.iso; o.textContent = c.name; sel.appendChild(o); }
+  const other = document.createElement("option"); other.value = ""; other.textContent = "Other (enter grid and prices)"; sel.appendChild(other);
+  sel.value = "CHN";
+  function applyCountry() {
+    const c = COUNTRIES.find(x => x.iso === sel.value);
+    if (!c) return;
+    $("ef").value = c.ef; $("elec").value = c.elec;
+    const d = DISPOSAL[c.iso];
+    if (d) { $("s_land").value = Math.round(100 * (d.land + d.other / 2)); $("s_lf").value = Math.round(100 * (d.landfill + d.other / 2)); $("s_inc").value = Math.round(100 * d.incin); }
+  }
+  sel.addEventListener("change", () => { applyCountry(); run(); });
+  applyCountry();
+  // segmented buttons
+  for (const id of ["sec", "dig", "warm"]) $(id).querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); run(); }));
+  $("cv").addEventListener("input", () => { $("cv_lab").textContent = $("cv").value; run(); });
+  document.querySelectorAll("input[type=number], input[type=checkbox]").forEach(el => el.addEventListener("change", run));
+  $("run").addEventListener("click", run);
+  $("bench").addEventListener("click", loadBenchmark);
+
+  function site(p, over) {
+    const o = over || {};
+    let land = num("s_land") / 100, lf = num("s_lf") / 100, inc = num("s_inc") / 100;
+    if (o.lf !== undefined) { const rest = Math.max(0, 1 - inc); lf = o.lf * rest; land = rest - lf; }
+    const tot = land + lf + inc; if (tot > 1.0001) { land /= tot; lf /= tot; inc /= tot; }
+    const left = Math.max(0, 1 - land - lf - inc); land += left / 2; lf += left / 2;
+    return { ef: num("ef"), digesting: o.dig !== undefined ? o.dig : seg("dig"), warm: seg("warm"), fate: { land, landfill: lf, incin: inc },
+      lam: o.lam !== undefined ? o.lam : num("lam") / 100 };
+  }
+  function params(p, over) {
+    const o = over || {};
+    const diesel = (COUNTRIES.find(x => x.iso === sel.value) || { diesel: 1.0 }).diesel;
+    return Object.assign({}, p, { with_secondary: seg("sec") ? 1 : 0, lfg_capture: num("cap") / 100, tip_usd_t: num("fee"),
+      elec_price_usd_kwh: num("elec"), extra_haul_km: num("haul"), diesel_usd_l: diesel });
+  }
+  function dsKt(p, cod) {
+    const flow = num("flow"); const q = M.mix(Object.assign({}, p));
+    const prim = PARAMS.CAPTURE * flow * cod / 1000 / (q.prim_cod_per_vs * q.prim_vs_frac) / 1000;
+    const was = seg("sec") ? (1 - PARAMS.CAPTURE) * flow * cod / 1e6 * p.was_yield_per_cod : 0;
+    return (prim + was) * 365 / 1000;
+  }
+
+  function warnings() {
+    const w = [];
+    const tot = num("s_land") + num("s_lf") + num("s_inc");
+    if (Math.abs(tot - 100) > 1) w.push(`Disposal shares add up to ${fmt(tot, 0)}%; they are rescaled to 100%.`);
+    if (num("cod") < 150 || num("cod") > 1000) w.push("Influent COD is outside the usual municipal range (150–1,000 mg/L).");
+    if (num("flow") < 10000) w.push("The model and its costs were built for plants treating at least 100,000 m³/d; below 10,000 m³/d the pyrolysis cost is extrapolated (capacity floor 2 kt DS/yr).");
+    if (num("ef") > 1.0) w.push("A grid factor above 1.0 t CO₂/MWh is above any national average in the study.");
+    if (num("fee") > 40) w.push("Landfill fee above the modelled range (US$3–40 per wet tonne).");
+    if (num("haul") > 80) w.push("Extra haul beyond the modelled range (0–80 km).");
+    if (num("s_lf") === 0 && !$("u_disp").checked) w.push("No sludge is landfilled, so diversion and gas capture have nothing to act on; only pyrolysis can change the balance.");
+    if (num("lam") === 0 && num("s_lf") > 0 && !$("u_lam").checked) w.push("Farmland takes none of the landfilled sludge, so diversion is unavailable; gas capture and pyrolysis remain.");
+    $("warnbox").innerHTML = w.length ? `<div class="warn">${w.map(x => `<p>${x}</p>`).join("")}</div>` : "";
+  }
+  function loadBenchmark() {
+    sel.value = "EGY"; applyCountry();
+    $("flow").value = 500000; $("cod").value = 278; $("s_land").value = 100; $("s_lf").value = 0; $("s_inc").value = 0;
+    $("cap").value = 0; $("lam").value = 100; $("fee").value = 10; $("haul").value = 20; $("cv").value = 100; $("cv_lab").textContent = "100";
+    for (const [id, v] of [["sec", "1"], ["dig", "1"], ["warm", "1"]]) $(id).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"));
+    for (const id of ["u_cod", "u_dig", "u_disp", "u_lam"]) $(id).checked = false;
+    run();
+    $("warnbox").innerHTML += `<div class="warn" style="border-color: var(--navy); background: var(--navy-soft)"><p><b>Benchmark.</b> This is the paper's worked case. Published values: 104 t of dry solids a day (38.0 kt a year); current practice +0.02 t CO₂e per t; pyrolysis after solar drying −0.36 t per t, a saving of 0.38 t per t over current practice; raw dumping +2.84 t per t. The route bars below should show the same numbers.</p></div>`;
+  }
+  function run() {
+    warnings();
+    const cv = num("cv");
+    const p0 = params(M.central());
+    const s0 = site(p0);
+    const ds = dsKt(p0, num("cod"));
+    const ev = M.evaluate(s0, p0, ds, [cv]);
+    const base = ev.base;
+    const choice = ev.choice[cv];
+    // verdict
+    const cls = choice.state.includes("P") ? "" : choice.state === "-" ? "grey" : "gold";
+    const curKt = base * ds, saveKt = choice.save_t_per_t * ds, costM = choice.cost_usd_per_t * ds / 1000;
+    $("verdictbox").innerHTML = `
+      <div class="verdict ${cls}"><p class="big">${choice.state === "-" ? "No costed intervention pays at this carbon value" : "First: " + STATE_LABEL[choice.state]}</p>
+      <p>${choice.state === "-" ? "Current practice is already the cheapest option at US$" + cv + " per tonne." :
+        `Avoids ${fmt(saveKt, 1)} kt CO₂e a year (${fmt(choice.save_t_per_t, 2)} t per t DS) at a net ${costM < 0 ? "saving" : "cost"} of US$${fmt(Math.abs(costM), 1)} million a year, ${(() => { const x = choice.cost_usd_per_t / Math.max(choice.save_t_per_t, 1e-9); return (x < 0 ? "a saving of US$" + fmt(-x, 0) : "US$" + fmt(x, 0)) + " per tonne avoided."; })()}`}</p></div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Sludge</div><div class="v">${fmt(ds, 1)}</div><div class="s">kt dry solids per year</div></div>
+        <div class="tile"><div class="k">Current practice</div><div class="v">${fmt(curKt, 1)}</div><div class="s">kt CO₂e per year (${fmt(base, 2)} t per t)</div></div>
+        <div class="tile"><div class="k">Diversion alone</div><div class="v">${ev.perT.V !== undefined ? fmt(ev.perT.V, 0) : "–"}</div><div class="s">US$ per t avoided</div></div>
+        <div class="tile"><div class="k">Pyrolysis alone</div><div class="v">${ev.perT.P !== undefined ? fmt(ev.perT.P, 0) : "–"}</div><div class="s">US$ per t avoided</div></div>
+        <div class="tile"><div class="k">Pyrolysis after diversion</div><div class="v">${ev.perT.P_after_V !== undefined ? fmt(ev.perT.P_after_V, 0) : "–"}</div><div class="s">US$ per t avoided</div></div>
+      </div>`;
+    // table
+    const rows = ev.states.filter(s => s !== "").map(s => ({ s, save: (base - ev.emissions[s]) * ds, cost: ev.cost[s] * ds / 1000, net: (cv * (base - ev.emissions[s]) - ev.cost[s]) * ds / 1000,
+      perT: base - ev.emissions[s] > 1e-6 ? ev.cost[s] / (base - ev.emissions[s]) : NaN }));
+    rows.sort((a, b) => b.net - a.net);
+    $("tbl").innerHTML = `<thead><tr><th>Intervention(s)</th><th>Avoided, kt CO₂e/yr</th><th>Net cost, US$ M/yr</th><th>US$ per t avoided</th><th>Net benefit at US$${cv}/t, US$ M/yr</th></tr></thead><tbody>` +
+      rows.map(r => `<tr class="${r.s === choice.state ? "best" : ""}"><td>${STATE_LABEL[r.s]}</td><td>${fmt(r.save, 1)}</td><td>${fmt(r.cost, 1)}</td><td>${fmt(r.perT, 0)}</td><td>${fmt(r.net, 1)}</td></tr>`).join("") + "</tbody>";
+    $("tblnote").textContent = "Net cost is after product values (electricity, fertiliser, diesel) and the landfill fee no longer paid; negative means it saves money. Pyrolysis replaces every destination, so diversion and capture add nothing once it is in.";
+    thresholds(cv, choice.state);
+    // Monte Carlo robustness and value of information
+    robustness(cv, ds);
+    bars(p0, s0);
+  }
+
+  function choiceAt(over) {                       // the central-value choice with some inputs overridden
+    const saved = {};
+    for (const k in over) { saved[k] = $(k).value; $(k).value = over[k]; }
+    try {
+      const p0 = params(M.central()); const s0 = site(p0); const ds = dsKt(p0, num("cod"));
+      return M.evaluate(s0, p0, ds, [num("cv")]).choice[num("cv")].state;
+    } finally { for (const k in saved) $(k).value = saved[k]; }
+  }
+  function thresholds(cv, cur) {
+    const scans = [
+      ["ef", "grid carbon intensity", 0, 1.2, 0.02, v => v.toFixed(2) + " t CO₂ per MWh"],
+      ["fee", "landfill fee", 0, 100, 2, v => "US$" + v.toFixed(0) + " per wet tonne"],
+      ["cv", "carbon value", 0, 400, 10, v => "US$" + v.toFixed(0) + " per t CO₂e"],
+    ];
+    const lines = [];
+    for (const [id, lab, lo, hi, step, f] of scans) {
+      const x0 = num(id);
+      let below = null, above = null;
+      for (let x = x0 - step; x >= lo - 1e-9; x -= step) { const c = choiceAt({ [id]: x }); if (c !== cur) { below = [x + step, c]; break; } }
+      for (let x = x0 + step; x <= hi + 1e-9; x += step) { const c = choiceAt({ [id]: x }); if (c !== cur) { above = [x, c]; break; } }
+      const name = s => STATE_LABEL[s] ? STATE_LABEL[s].toLowerCase() : "nothing";
+      if (!below && !above) lines.push(`<p>The first choice does not change for any ${lab} between ${f(lo)} and ${f(hi)}.</p>`);
+      else {
+        let t = `<p>The first choice holds for ${lab} from ${f(below ? below[0] : lo)} to ${f(above ? above[0] - step : hi)}`;
+        if (below) t += `; below that it becomes <b>${name(below[1])}</b>`;
+        if (above) t += `${below ? "," : ";"} above it becomes <b>${name(above[1])}</b>`;
+        lines.push(t + ".</p>");
+      }
+    }
+    $("thresh").innerHTML = lines.join("") + `<p class="note">Each line varies one input with all the others as entered, at central parameter values; the thresholds are conditional on those inputs and move when they move. The grid line answers when raw-sludge pyrolysis or incineration overtakes the current first choice as grids decarbonise.</p>`;
+  }
+  function robustness(cv, dsCentral) {
+    const N = 200;
+    const rand = M.mulberry32(7);
+    const unknown = { dig: $("u_dig").checked, lam: $("u_lam").checked, disp: $("u_disp").checked, cod: $("u_cod").checked };
+    const states = M.STATES.filter(s => true);
+    const V = [], X = { dig: [], lam: [], disp: [], cod: [] };
+    for (let k = 0; k < N; k++) {
+      const p = params(M.draw(rand));
+      const o = {};
+      if (unknown.dig) o.dig = rand() < 0.5; if (unknown.lam) o.lam = rand(); if (unknown.disp) o.lf = rand();
+      const cod = unknown.cod ? Math.exp(Math.log(278) + rand() * (Math.log(600) - Math.log(278))) : num("cod");
+      X.dig.push(o.dig === undefined ? seg("dig") : o.dig); X.lam.push(o.lam === undefined ? num("lam") / 100 : o.lam); X.disp.push(o.lf === undefined ? 0 : o.lf); X.cod.push(cod);
+      const s = site(p, o), ds = dsKt(p, cod);
+      const e = M.evaluate(s, p, ds, [cv]);
+      V.push(states.map(st => (cv * (e.base - e.emissions[st]) - e.cost[st]) * ds * 1000));
+    }
+    const mean = states.map((_, j) => V.reduce((a, v) => a + v[j], 0) / N);
+    const bestExp = mean.indexOf(Math.max(...mean));
+    const bestCount = states.map(() => 0);
+    for (const v of V) bestCount[v.indexOf(Math.max(...v))]++;
+    const order = states.map((s, j) => j).sort((a, b) => bestCount[b] - bestCount[a]).filter(j => bestCount[j] > 0);
+    let html = `<p style="margin:0 0 8px">Across 200 draws of the model parameters${Object.values(unknown).some(x => x) ? " and the facts marked unknown" : ""}, the choice with the highest expected net benefit is <strong>${STATE_LABEL[states[bestExp]]}</strong>; it is the best choice in <strong>${Math.round(100 * bestCount[bestExp] / N)}%</strong> of draws.</p><div class="robust">`;
+    for (const j of order) html += `<div class="rbar"><span>${STATE_LABEL[states[j]]}</span><div class="track"><div class="fill" style="width:${100 * bestCount[j] / N}%"></div></div><span class="mono">${Math.round(100 * bestCount[j] / N)}%</span></div>`;
+    html += "</div>";
+    const facts = [["dig", "Digestion status"], ["lam", "Farmland capacity"], ["disp", "Where sludge goes"], ["cod", "Influent strength"]].filter(([k]) => unknown[k]);
+    {
+      const perfect = V.reduce((a, v) => a + Math.max(...v), 0) / N;
+      const short = V.map(v => Math.max(...v) - v[bestExp]).sort((a, b) => a - b);
+      const regret = perfect - Math.max(...mean), p95 = short[Math.floor(0.95 * (N - 1))];
+      html += `<p style="margin:8px 0 0"><b>Expected regret</b> of choosing ${STATE_LABEL[states[bestExp]].toLowerCase()} now, against knowing everything the model treats as uncertain${Object.values(unknown).some(x => x) ? " (parameters and the facts marked unknown)" : " (parameters only)"}: <b>US$${fmt(regret / 1e3, 0)}k a year</b>; in the worst 5% of draws the shortfall exceeds US$${fmt(p95 / 1e3, 0)}k. A choice that is best in few draws can still be safe if this number is small, and one that wins most draws can be risky if it is large.</p>`;
+    }
+    if (facts.length) {
+      const perfect = V.reduce((a, v) => a + Math.max(...v), 0) / N;
+      html += `<div class="evpi"><p style="margin:8px 0 6px">What learning each fact before deciding is worth (expected value of information, US$ per year):</p><div class="robust">`;
+      const items = [];
+      for (const [k, lab] of facts) {
+        const x = X[k];
+        const bins = k === "dig" ? x.map(v => v ? 1 : 0) : (() => { const s = [...x].sort((a, b) => a - b); return x.map(v => Math.min(4, Math.floor(5 * s.indexOf(v) / N))); })();
+        const groups = {};
+        bins.forEach((b, i) => { (groups[b] = groups[b] || []).push(i); });
+        let ev = 0;
+        for (const b in groups) { const idx = groups[b]; const m = states.map((_, j) => idx.reduce((a, i) => a + V[i][j], 0) / idx.length); ev += Math.max(...m) * idx.length / N; }
+        items.push([lab, Math.max(0, ev - Math.max(...mean))]);
+      }
+      const mx = Math.max(perfect - Math.max(...mean), ...items.map(x => x[1]), 1);
+      for (const [lab, v] of items) html += `<div class="rbar"><span>${lab}</span><div class="track"><div class="fill" style="width:${100 * v / mx}%"></div></div><span class="mono">${fmt(v / 1e3, 0)}k</span></div>`;
+      html += `<div class="rbar"><span>Everything, parameters included</span><div class="track"><div class="fill" style="width:100%;background:var(--grey)"></div></div><span class="mono">${fmt((perfect - Math.max(...mean)) / 1e3, 0)}k</span></div></div>`;
+      html += `<p class="note">Zero means the same choice is best whatever the fact turns out to be. Expected net benefit of the chosen intervention: US$${fmt(Math.max(...mean) / 1e6, 2)} million a year.</p></div>`;
+    } else {
+      html += `<p class="note">Tick "unknown" beside a fact in the left column to see how much the choice depends on it.</p>`;
+    }
+    $("robust").innerHTML = html;
+  }
+
+  function bars(p, s) {
+    const names = M.ROUTES.filter(r => s.warm || !r.includes("solar"));
+    const vals = names.map(n => M.route(n, s.ef, p).total).map((v, i) => ({ n: names[i], v }));
+    vals.sort((a, b) => a.v - b.v);
+    const LAB = { "raw landfill": "Raw sludge → dump", "raw land": "Raw sludge → land", "AD-CHP land": "Digestion + CHP → land", "AD-CHP landfill": "Digestion + CHP → landfill",
+      "AD-biomethane land": "Digestion + biomethane → land", "AD-CHP solar-dry incin": "Digestion → solar dry → incineration", "AD-CHP thermal-dry incin": "Digestion → thermal dry → incineration",
+      "AD-CHP solar-dry pyro": "Digestion → solar dry → pyrolysis", "AD-CHP thermal-dry pyro": "Digestion → thermal dry → pyrolysis", "raw solar-dry pyro": "Raw sludge → solar dry → pyrolysis",
+      "raw thermal-dry pyro": "Raw sludge → thermal dry → pyrolysis", "raw incin": "Raw sludge → incineration" };
+    const W = 640, rowH = 22, L = 250, R = 60, H = vals.length * rowH + 30;
+    const vmin = Math.min(-0.5, ...vals.map(x => x.v)), vmax = Math.max(1.0, ...vals.map(x => x.v));
+    const sx = (v) => L + (v - vmin) / (vmax - vmin) * (W - L - R);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net emissions by route">`;
+    svg += `<line x1="${sx(0)}" x2="${sx(0)}" y1="6" y2="${H - 24}" stroke="currentColor" stroke-width="0.8"/>`;
+    vals.forEach((x, i) => {
+      const y = 8 + i * rowH; const fam = x.n.includes("pyro") ? "var(--navy)" : x.n.includes("incin") ? "var(--grey)" : x.n.startsWith("AD") ? "var(--gold)" : "var(--grey)";
+      svg += `<text x="${L - 6}" y="${y + 14}" text-anchor="end" font-size="11" fill="currentColor">${LAB[x.n]}</text>`;
+      const x0 = sx(Math.min(0, x.v)), x1 = sx(Math.max(0, x.v));
+      svg += `<rect x="${x0}" y="${y + 4}" width="${Math.max(1, x1 - x0)}" height="13" fill="${fam}" rx="1"/>`;
+      svg += `<text x="${x1 + 4}" y="${y + 14}" text-anchor="start" font-size="11" fill="currentColor" font-family="var(--mono)">${x.v >= 0 ? "+" : "−"}${Math.abs(x.v).toFixed(2)}</text>`;
+    });
+    [vmin, 0, vmax].forEach(t => { svg += `<text x="${sx(t)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">${t.toFixed(1)}</text>`; });
+    svg += "</svg>";
+    $("bars").innerHTML = svg;
+  }
+  run();
+})();
+</script>
