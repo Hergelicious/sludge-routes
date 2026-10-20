@@ -6,7 +6,6 @@ sources (`data/plant_screening.csv`): entries with no plant of that size behind 
 below the threshold, preliminary treatment only, or a duplicate) are removed, and the screened population is the one
 every result is computed on; `python run_all.py --population all` restores the unscreened 364 entries.
 
-Code and data for: Hassan, A. H. *Where sewage sludge goes matters more than how it is treated* (submitted).
 
 ## What the model does
 
@@ -28,15 +27,13 @@ Code and data for: Hassan, A. H. *Where sewage sludge goes matters more than how
 - **Grid decarbonisation**: current practice and the technical potential with every country's grid factor scaled
   towards zero (`run_all.py`).
 
-Every parameter has a central value, a range and a source in `sludgeroutes/params.py`; values without a published
-source are marked `ASSUMPTION`.
 
 ## Data
 
 | File | Content | Source |
 |---|---|---|
 | `data/plants.csv` | 364 inventory entries: location, flow, treatment level | HydroWASTE v1.0 (Ehalt Macedo et al. 2022, CC BY 4.0) |
-| `data/plant_screening.csv` | screening verdict per entry (real / smaller / phantom / outfall / duplicate), documented flow, digester status and sludge destination where found | public sources listed in Supplementary Table 7 |
+| `data/plant_screening.csv` | screening verdict per entry (real / smaller / phantom / outfall / duplicate / industrial / unresolved), documented flow, digester status and sludge destination where found | public sources listed in Supplementary Table 7 |
 | `data/inventory_screening_table7.csv` | the full screening record (Supplementary Table 7): what each checked entry is, documented flow, digesters, destination, notes, sources and URLs | public sources, checked 19–20 October 2026 |
 | `data/countries.csv` | grid carbon intensity; diesel and electricity prices | Ember 2025 via Our World in Data; GlobalPetrolPrices.com |
 | `data/disposal.csv` | reported shares of sludge to land, landfill, incineration, other | sources in the file |
@@ -59,7 +56,6 @@ python run_all.py --quick     # all result tables, 10x fewer Monte Carlo draws (
 python run_all.py             # full run as in the paper
 ```
 
-Results are written to `results/` as CSV and JSON; `results/headline.json` holds the main numbers.
 
 | Output | In the paper |
 |---|---|
@@ -70,13 +66,16 @@ Results are written to `results/` as CSV and JSON; `results/headline.json` holds
 | `tornado_gabal.csv`, `mc_total_saving.csv`, `attribution.json`, `attribution_draws.csv` | Extended Data Fig. 1 |
 | `pyrolysis_breakeven.csv` | Extended Data Fig. 3 |
 | `value_of_information_100.csv`, `value_of_information_320.csv` | Extended Data Fig. 4, Supplementary Table 4 |
+| `value_of_information_crossfit.csv` | Supplementary Note 4.4 (choices made on one half of the draws, valued on the other) |
 | `value_of_information_convergence.csv` | Supplementary Table 5 (100², 200², 300² draws × 3 seeds) |
 | `strategies.csv` | Extended Data Fig. 5 (eight decision rules on the same joint draws) |
 | `strategies_seeds.csv`, `strategies_beta22.csv` | Supplementary Note 4.6 (the rules on three seeds; with Beta(2, 2) fact distributions) |
 | `survey_value_100.csv` | Supplementary Table 6 (value of surveys of stated precision, by plant) |
 | `grid_decarbonisation.csv`, `sensitivity_technical_potential.csv`, `sensitivity_diversion_costs.csv`, `sensitivity_process.csv`, `interventions_no_digestion.csv`, `where_beats_how_sweep.csv` | Supplementary Table 3 |
 | `parameters.csv` | Supplementary Table 1 |
-Tested with Python 3.13, NumPy 2.5 and pandas 3.0.
+| `headline.json` | the numbers quoted in the abstract and main text |
+
+Tested with Python 3.13, NumPy 2.5, pandas 3.0 and SciPy 1.18 (SciPy is needed only for the Beta(2, 2) sensitivity of Supplementary Note 4.6).
 
 ## Licence
 
