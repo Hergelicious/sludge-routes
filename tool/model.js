@@ -1,5 +1,5 @@
 // sludgeroutes model, JavaScript port of sludgeroutes/routes.py, econ.py and interventions.py (v1.0.0).
-// Same parameters, same equations; checked against the Python code on the test vectors in tool/parity.json.
+
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.SludgeModel = factory();
