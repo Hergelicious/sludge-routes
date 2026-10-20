@@ -1,0 +1,22 @@
+case,technical_potential_Mt,diversion_Mt,sludge_Mt_DS,plants,current_practice_Mt,share_raw_pyrolysis
+central,4.048124615132481,,,,,
+landfills already capture 50% of gas,2.55609054022616,,,,,
+alternative disposal mix for China,4.757968342233886,,,,,
+direct N2O only,3.93013923551824,,,,,
+biochar barred from farmland,3.692326392218754,,,,,
+"IPCC AR5 GWP100 (CH4 28, N2O 265)",4.140657485800983,,,,,
+"IPCC AR6 GWP20 (CH4 80, N2O 273)",10.95259367373794,,,,,
+secondary-sludge yield 0.4,3.6552972118562774,,,,,
+secondary-sludge yield 0.7,4.4409683716909,,,,,
+secondary-sludge VS destroyed 0.2,4.238201137265247,,,,,
+secondary-sludge VS destroyed 0.4,3.8580480929997156,,,,,
+screened inventory (the analytical population),4.048124615132481,2.524619375030261,4.519825609472523,278.0,,
+unscreened inventory: all 364 entries,5.555173632946539,3.3662214598716758,6.294551592873026,364.0,,
+"documented practice: documented flow, digester status and destination where found (Supplementary Table 7)",4.284129034456107,2.5742011688438478,5.066535758219465,278.0,,
+"China: every plant incinerates its sludge, as documented at its largest plants",2.314881663823983,1.2953288642028247,,,,
+documented practice and incineration at every Chinese plant,2.9081225210341226,1.5982700219942703,,,,
+marginal electricity = combined-cycle gas (0.37 t CO2/MWh) at every plant,4.1673260404356745,2.528800338606526,,,3.0188471387242743,0.20893151262267876
+marginal electricity = coal (0.9 t CO2/MWh) at every plant,3.8802186462926174,2.5131627634882756,,,1.3730603727478488,0.0
+"landfill methane in a fixed 100-year window, decay constant 0.06 per yr (factor 0.992)",4.0244751250682445,,,,,
+"landfill methane in a fixed 100-year window, decay constant 0.1 per yr (factor 0.999)",4.044173538445579,,,,,
+"landfill methane in a fixed 100-year window, decay constant 0.185 per yr (factor 0.998)",4.043346504654536,,,,,

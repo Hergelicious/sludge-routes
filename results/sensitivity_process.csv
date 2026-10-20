@@ -1,0 +1,7 @@
+case,plants,sludge_share,saving_share,technical_potential_Mt,diversion_Mt,sludge_Mt_DS
+documented non-activated-sludge plants,17.0,0.04438032517489802,0.05163754816677691,,,
+their sludge x 0.5,,,,3.943607000232971,2.4574109114015763,4.419529944331413
+their sludge x 0.0,,,,3.839089385333462,2.390202447772892,4.319234279190301
+process UASB,8.0,0.02399164012679427,,,,
+process SBR/extended aeration,8.0,0.01732448960734828,,,,
+process lagoon,1.0,0.003064195440755478,,,,

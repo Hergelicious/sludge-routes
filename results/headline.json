@@ -1,0 +1,71 @@
+{
+ "population": "screened",
+ "n_plants": 278,
+ "n_excluded_by_screening": 86,
+ "sludge_Mt_DS": 4.519825609472523,
+ "technical_potential_Mt": 4.048124615132481,
+ "diversion_Mt": 2.524619375030261,
+ "diversion_share_of_technical": 0.6236515955049569,
+ "then_best_route_Mt": 1.523505240102219,
+ "intervention_alone_V_Mt": 2.524619375030261,
+ "intervention_alone_G_Mt": 1.492034074906321,
+ "intervention_alone_P_Mt": 4.007240264288856,
+ "intervention_last_P_Mt": 1.4826208892585946,
+ "intervention_shapley_V_Mt": 1.0136373416974107,
+ "intervention_shapley_G_Mt": 0.4973446916354403,
+ "intervention_shapley_P_Mt": 2.496258230956005,
+ "usd_per_t_V_p10_p50_p90": [
+  -47.15661979940692,
+  -47.15661979940692,
+  -46.63862987419266
+ ],
+ "usd_per_t_G_p10_p50_p90": [
+  30.0,
+  30.0,
+  30.0
+ ],
+ "usd_per_t_P_p10_p50_p90": [
+  39.33464503703488,
+  126.55351884548126,
+  191.04465942658962
+ ],
+ "usd_per_t_P_after_V_p10_p50_p90": [
+  268.57571190097144,
+  354.2809448776316,
+  529.0972916468722
+ ],
+ "usd_per_t_P_after_G_p10_p50_p90": [
+  46.1426306201534,
+  176.17524127479126,
+  268.57571190097144
+ ],
+ "grid_tipping_warm": {
+  "current_neutral": 0.5910752169204443,
+  "digester_pays": 0.36435315123912915
+ },
+ "grid_tipping_cold": {
+  "current_neutral": 0.5910752169204443,
+  "digester_pays": 0.4766524594826933
+ },
+ "gabal_ds_t_d": 104.24227777777779,
+ "mixed_sludge_properties": {
+  "vs_frac_raw": 0.7439862212015705,
+  "vs_destruction": 0.44099274425051305,
+  "n_frac_ds": 0.051957922809096974,
+  "p_frac_ds": 0.03388125046299725,
+  "primary_share": 0.6993110600785243
+ },
+ "sludge_per_1000m3_at_278": {
+  "primary": 145.79555555555555,
+  "secondary": 62.68900000000001
+ },
+ "attribution": {
+  "theta": 0.10910132854807819,
+  "d": 0.24861026735158195,
+  "c": 0.3673658173579675,
+  "parameters": 0.2621530586859892,
+  "interactions": 0.012769528056383095
+ },
+ "n_parameters": 88,
+ "n_working_assumptions": 37
+}
