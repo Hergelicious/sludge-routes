@@ -1,6 +1,4 @@
-"""Assemble the single-file decision tool: tool/index.html (standalone page, e.g. for GitHub Pages) from
-tool/page.html (the page body), tool/model.js and tool/params.json, plus the country inputs of data/countries.csv.
-Run from the repository root: python tool/build_tool.py"""
+
 import json
 import os
 
